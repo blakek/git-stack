@@ -44,7 +44,11 @@ export function parseArguments(
       if (arg.default) {
         parsed[arg.name] = arg.default;
       } else if (arg.required) {
-        throw new Error(`Missing required argument: ${arg.name}`);
+        throw new Error(
+          `${arg.isPositional ? "positional" : ""} argument "${
+            arg.name
+          }" is required but not provided.`
+        );
       }
     }
   });
