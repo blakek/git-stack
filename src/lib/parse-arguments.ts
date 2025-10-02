@@ -29,6 +29,21 @@ export function parseArguments(
       continue;
     }
 
+    if (arg?.startsWith("-")) {
+      const alias = arg.slice(1);
+      const commandArg = flags.find((arg) => arg.alias === alias);
+
+      if (commandArg) {
+        const value = commandArg.type === "boolean" ? true : inputArgs[i + 1];
+        parsed[commandArg.name] = value;
+        if (commandArg.type !== "boolean") i++; // Skip next if it's a value
+      } else {
+        console.warn(`Unknown flag alias: ${alias}`);
+      }
+
+      continue;
+    }
+
     const commandArg = positionals[positionalIndex];
     if (!commandArg) {
       throw new Error(`Unexpected argument: ${arg}`);
