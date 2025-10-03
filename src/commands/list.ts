@@ -5,7 +5,7 @@ import {
   isInGitRepo,
   type Command,
 } from "@/lib";
-import { Tree } from "@/lib/tree";
+import * as Tree from "@/lib/tree";
 
 const args = defineArgs([
   {
@@ -39,15 +39,15 @@ export const listCommand: Command<typeof args> = {
       );
     }
 
+    const branch = args.branch || (await getCurrentBranch());
+
     const stackLookup = await getFullStackLookup();
+    const { nodes, roots, errors } = Tree.buildStackGraph(stackLookup);
 
     if (args.all) {
-      const tree = Tree.fromMap(stackLookup);
-      tree.print();
+      Tree.printStacks(roots, nodes, branch);
       return;
     }
-
-    const branch = args.branch || (await getCurrentBranch());
 
     if (!branch) {
       throw new Error(
@@ -55,6 +55,19 @@ export const listCommand: Command<typeof args> = {
       );
     }
 
-    throw new Error("Listing a specific stack is not yet implemented.");
+    const root = Tree.findRootOf(branch, nodes);
+    if (!root) {
+      throw new Error(`Branch "${branch}" is not part of a stack.`);
+    }
+
+    Tree.printStacks([root], nodes, branch);
+
+    if (errors.length > 0) {
+      console.warn("Warnings:");
+      for (const error of errors) {
+        console.warn(`  - ${error}`);
+      }
+      console.warn("");
+    }
   },
 };
