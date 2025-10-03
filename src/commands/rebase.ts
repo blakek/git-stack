@@ -40,6 +40,7 @@ export const rebaseCommand: Command<typeof args> = {
       return;
     }
 
+    await $`git fetch origin`;
     await $`git rebase ${parent} --update-refs --autostash`;
   },
 };
