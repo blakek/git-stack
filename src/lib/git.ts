@@ -18,6 +18,17 @@ export async function getCurrentBranch(): Promise<string | undefined> {
   }
 }
 
+export async function getStackParent(
+  branchName: string
+): Promise<string | undefined> {
+  try {
+    const result = await $`git config --get stack.parent.${branchName}`.text();
+    return result.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function guessMainBranch(): Promise<string> {
   if (await hasRemote("origin")) {
     const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
@@ -55,8 +66,22 @@ export async function isInGitRepo(): Promise<boolean> {
   }
 }
 
+export async function listLocalBranches(): Promise<string[]> {
+  const result =
+    await $`git for-each-ref --format="%(refname:short)" refs/heads`.text();
+
+  return result.split("\n").filter(Boolean);
+}
+
 export async function maybeFetchOrigin(): Promise<void> {
   if (await hasRemote("origin")) {
     await $`git fetch origin`.quiet();
   }
+}
+
+export async function setStackParent(
+  branchName: string,
+  parentName: string
+): Promise<void> {
+  await $`git config set stack.parent.${branchName} ${parentName}`.quiet();
 }
