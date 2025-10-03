@@ -26,3 +26,8 @@ export async function branchExists(branchName: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function guessMainBranch(): Promise<string> {
+  const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
+  return result.trim();
+}
