@@ -19,8 +19,31 @@ export async function getCurrentBranch(): Promise<string | undefined> {
 }
 
 export async function guessMainBranch(): Promise<string> {
-  const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
-  return result.trim();
+  if (await hasRemote("origin")) {
+    const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
+    return result.trim();
+  }
+
+  if (await branchExists("main")) {
+    return "main";
+  }
+
+  if (await branchExists("master")) {
+    return "master";
+  }
+
+  throw new Error(
+    "Could not guess the main branch. Please specify the parent branch explicitly."
+  );
+}
+
+export async function hasRemote(remoteName: string): Promise<boolean> {
+  try {
+    await $`git ls-remote --exit-code ${remoteName}`.quiet();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function isInGitRepo(): Promise<boolean> {
@@ -29,5 +52,11 @@ export async function isInGitRepo(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+export async function maybeFetchOrigin(): Promise<void> {
+  if (await hasRemote("origin")) {
+    await $`git fetch origin`.quiet();
   }
 }

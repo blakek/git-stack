@@ -2,6 +2,7 @@ import {
   defineArgs,
   getCurrentBranch,
   guessMainBranch,
+  maybeFetchOrigin,
   type Command,
 } from "@/lib";
 import { $ } from "bun";
@@ -29,7 +30,6 @@ export const rebaseCommand: Command<typeof args> = {
   description: "Rebase all stack branches onto the latest parent branch",
   name: "rebase",
   run: async (args) => {
-    console.log("hi");
     const parent = args.parent || (await guessMainBranch());
     const currentBranch = await getCurrentBranch();
 
@@ -40,7 +40,7 @@ export const rebaseCommand: Command<typeof args> = {
       return;
     }
 
-    await $`git fetch origin`;
-    await $`git rebase ${parent} --update-refs --autostash`;
+    await maybeFetchOrigin();
+    await $`git rebase --autostash --update-refs ${parent}`;
   },
 };
