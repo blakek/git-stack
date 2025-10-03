@@ -183,17 +183,19 @@ export function printPruned(
     path.push(next);
   }
 
-  // Print each path step (as a single-child subtree line)
-  // Note: the path[0] is root, already printed.
-  for (const branch of path.slice(1)) {
-    printSubtree(branch, children, currentBranch, "", true, allowed);
+  // If there is a path beyond the root, print the first step; recursion with
+  // the allowlist will render the remaining path nodes and the descendants of
+  // the target automatically (without duplication).
+  if (path.length > 1) {
+    const first = path[1]!;
+    printSubtree(first, children, currentBranch, "", true, allowed);
+    return;
   }
 
-  // Finally, print the target subtree (the last in the path) filtered by 'allowed'
-  const target = path[path.length - 1] ?? root;
-  const childSet = children.get(target);
-  if (childSet) {
-    const childList = [...childSet].filter((b) => allowed.has(b));
+  // Path only includes the root: print its (filtered) children.
+  const rootChildren = children.get(root);
+  if (rootChildren) {
+    const childList = [...rootChildren].filter((b) => allowed.has(b));
     for (const [i, child] of childList.entries()) {
       printSubtree(
         child,

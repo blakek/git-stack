@@ -134,4 +134,73 @@ describe("printing", () => {
     expect(output).toContain("feature-2-2");
     expect(output).toContain("feature-3");
   });
+
+  it("pruned output excludes siblings not on path or descendants", () => {
+    const lookup = mapOf([
+      ["feature-1", "main"],
+      ["feature-2", "feature-1"],
+      ["temp-test-1", "main"],
+    ]);
+    const { parents, children, roots } = buildStackIndex(lookup);
+    const root = [...roots].find((r) => r === "main")!;
+
+    // Simulate allow set for listing feature-1 (should include main, feature-1, feature-2)
+    const allow = new Set<string>(["main", "feature-1", "feature-2"]);
+    const lines = captureConsole(() => {
+      printPruned(root, allow, children, "feature-1");
+    });
+    const output = lines.join("\n");
+    expect(output).toContain("main");
+    expect(output).toContain("feature-1 *");
+    expect(output).toContain("feature-2");
+    expect(output).not.toContain("temp-test-1");
+  });
+
+  it("pruned output does not duplicate descendant subtrees", () => {
+    const lookup = mapOf([
+      ["feature-1", "main"],
+      ["feature-2", "feature-1"],
+      ["feature-2-2", "feature-2"],
+      ["feature-3", "feature-2"],
+      ["temp-test-1", "main"],
+    ]);
+    const { children, roots } = buildStackIndex(lookup);
+    const root = [...roots].find((r) => r === "main")!;
+    const allow = new Set<string>([
+      "main",
+      "feature-1",
+      "feature-2",
+      "feature-2-2",
+      "feature-3",
+    ]);
+    const lines = captureConsole(() => {
+      printPruned(root, allow, children, "feature-1");
+    });
+    const output = lines.join("\n");
+    // Count occurrences of each branch name (without tree glyphs) to ensure they appear only once (except formatting markers)
+    const counts: Record<string, number> = {};
+    const targets = [
+      "feature-1",
+      "feature-2",
+      "feature-2-2",
+      "feature-3",
+    ] as const;
+    for (const t of targets) counts[t] = 0;
+    for (const line of lines) {
+      // Strip tree glyphs, split on spaces, take first token (branch name)
+      const cleaned = line
+        .replace(/[│├└─]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!cleaned) continue;
+      const first: string = cleaned.split(" ")[0] ?? "";
+      if (first && Object.prototype.hasOwnProperty.call(counts, first)) {
+        counts[first]! += 1;
+      }
+    }
+    expect(counts["feature-1"]).toBe(1);
+    expect(counts["feature-2"]).toBe(1);
+    expect(counts["feature-2-2"]).toBe(1);
+    expect(counts["feature-3"]).toBe(1);
+  });
 });

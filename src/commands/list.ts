@@ -64,18 +64,19 @@ export const listCommand: Command<typeof args> = {
       throw new Error(`Branch "${branch}" is not part of a stack.`);
     }
 
-    const descendants = collectBranchAndDescendants(root, children);
+    // Collect descendants starting from the selected branch (not the root)
+    const branchDescendants = collectBranchAndDescendants(branch, children);
 
-    const allow = new Set<string>([...descendants]);
-    // Walk up to root, adding ancestors
-    let cursor: string | undefined = root;
+    // Walk ancestors from branch up to root (inclusive)
+    const allow = new Set<string>(branchDescendants);
+    let cursor: string | undefined = branch;
     while (cursor && cursor !== root) {
       const parent = parents.get(cursor);
       if (!parent) break;
       allow.add(parent);
       cursor = parent;
     }
-    allow.add(root);
+    allow.add(root); // ensure root included
 
     printPruned(root, allow, children, branch);
   },
