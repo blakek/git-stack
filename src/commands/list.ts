@@ -1,4 +1,11 @@
-import { defineArgs, getCurrentBranch, isInGitRepo, type Command } from "@/lib";
+import {
+  defineArgs,
+  getCurrentBranch,
+  getFullStackLookup,
+  isInGitRepo,
+  type Command,
+} from "@/lib";
+import { Tree } from "@/lib/tree";
 
 const args = defineArgs([
   {
@@ -9,7 +16,7 @@ const args = defineArgs([
     type: "boolean",
   },
   {
-    description: "Show the stack starting from the given branch",
+    description: "Show the stacks containing the specified branch",
     isPositional: true,
     name: "branch",
     required: false,
@@ -32,8 +39,12 @@ export const listCommand: Command<typeof args> = {
       );
     }
 
+    const stackLookup = await getFullStackLookup();
+
     if (args.all) {
-      throw new Error("Listing all stacks is not yet implemented.");
+      const tree = Tree.fromMap(stackLookup);
+      tree.print();
+      return;
     }
 
     const branch = args.branch || (await getCurrentBranch());

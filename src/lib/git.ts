@@ -29,6 +29,29 @@ export async function getStackParent(
   }
 }
 
+export async function getFullStackLookup(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+
+  const result =
+    await $`git config get --all --show-names --regexp 'stack\.parent\..*'`.lines();
+
+  for await (const line of result) {
+    const match = line.match(/^stack\.parent\.(?<branch>.+?)\s+(?<parent>.+)$/);
+    if (
+      !match ||
+      !match.groups ||
+      !match.groups.branch ||
+      !match.groups.parent
+    ) {
+      continue;
+    }
+
+    map.set(match.groups.branch, match.groups.parent);
+  }
+
+  return map;
+}
+
 export async function guessMainBranch(): Promise<string> {
   if (await hasRemote("origin")) {
     const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
