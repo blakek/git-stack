@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-/usr/bin/env bun src/index.ts "$@"
+__dirname="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+/usr/bin/env bun "${__dirname}/src/index.ts" "$@"
