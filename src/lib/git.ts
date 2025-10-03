@@ -1,8 +1,8 @@
 import { $ } from "bun";
 
-export async function isInGitRepo(): Promise<boolean> {
+export async function branchExists(branchName: string): Promise<boolean> {
   try {
-    await $`git rev-parse --is-inside-work-tree`.quiet();
+    await $`git show-ref --verify --quiet refs/heads/${branchName}`.quiet();
     return true;
   } catch {
     return false;
@@ -18,16 +18,16 @@ export async function getCurrentBranch(): Promise<string | undefined> {
   }
 }
 
-export async function branchExists(branchName: string): Promise<boolean> {
+export async function guessMainBranch(): Promise<string> {
+  const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
+  return result.trim();
+}
+
+export async function isInGitRepo(): Promise<boolean> {
   try {
-    await $`git show-ref --verify --quiet refs/heads/${branchName}`.quiet();
+    await $`git rev-parse --is-inside-work-tree`.quiet();
     return true;
   } catch {
     return false;
   }
-}
-
-export async function guessMainBranch(): Promise<string> {
-  const result = await $`git rev-parse --abbrev-ref origin/HEAD`.text();
-  return result.trim();
 }
