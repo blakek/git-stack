@@ -60,7 +60,7 @@ export const listCommand: Command<typeof args> = {
       throw new Error(`Branch "${branch}" is not part of a stack.`);
     }
 
-    Tree.printStacks([root], nodes, branch);
+    Tree.printPrunedStack(root, branch, nodes);
 
     if (errors.length > 0) {
       console.warn("Warnings:");

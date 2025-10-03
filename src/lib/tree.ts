@@ -130,3 +130,101 @@ export function findRootOf(
   }
   return n ? n.name : undefined;
 }
+
+export function pathFromRootToTarget(
+  root: string,
+  target: string,
+  nodes: Map<string, Node>
+): Set<string> {
+  // climb up from target; verify it reaches the root
+  const path: string[] = [];
+  let cur = nodes.get(target);
+  const seen = new Set<string>();
+  while (cur && !seen.has(cur.name)) {
+    path.push(cur.name);
+    if (!cur.parent) break;
+    seen.add(cur.name);
+    cur = nodes.get(cur.parent);
+  }
+  if (!cur || cur.name !== root) {
+    // target isn't under this root; return empty so caller can handle
+    return new Set();
+  }
+  // path currently [target … root]; reverse to [root … target]
+  return new Set(path.reverse());
+}
+
+export function collectDescendants(
+  start: string,
+  nodes: Map<string, Node>
+): Set<string> {
+  const out = new Set<string>();
+  const stack = [start];
+  while (stack.length) {
+    const n = stack.pop()!;
+    if (out.has(n)) continue;
+    out.add(n);
+    const kids = nodes.get(n)?.children ?? [];
+    for (const k of kids) stack.push(k);
+  }
+  return out;
+}
+
+export function printPrunedStack(
+  root: string,
+  target: string,
+  nodes: Map<string, Node>,
+  current = target
+) {
+  const path = pathFromRootToTarget(root, target, nodes);
+  if (!path.size) {
+    console.log(
+      `Branch '${target}' is not under root '${root}' (by metadata).`
+    );
+    return;
+  }
+  const desc = collectDescendants(target, nodes);
+  const allow = new Set<string>([...path, ...desc]);
+
+  // same glyphs you already use
+  const tee = "├─";
+  const last = "└─";
+  const indent = "   ";
+
+  const mark = (name: string) => {
+    const n = nodes.get(name)!;
+    const bits = [
+      current === name ? "*" : "",
+      n.cyclic ? "↻ cycle" : "",
+      n.missingParent ? "⚠ parent missing" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return bits ? `${name} (${bits})` : name;
+  };
+
+  function printNode(name: string, prefix = "", isLast = true) {
+    console.log(`${prefix}${isLast ? last : tee} ${mark(name)}`);
+    const kids = (nodes.get(name)?.children ?? []).filter((k) => allow.has(k));
+    const nextPrefix = prefix + (isLast ? indent : "│  ");
+    kids.forEach((k, i) => printNode(k, nextPrefix, i === kids.length - 1));
+  }
+
+  // print the path from root … to just before target
+  // then print target subtree
+  const pathSeq = [...path]; // [root, …, target]
+  const ancestorsOnly = pathSeq.slice(0, -1);
+  // print root line
+  console.log(mark(root));
+  // walk down ancestors, printing exactly one child at each step
+  let prev = root;
+  for (const step of ancestorsOnly.slice(1)) {
+    printNode(step, "", true); // as the only child we show at that level
+    prev = step;
+  }
+  // finally, print the target subtree
+  const targetName = pathSeq[pathSeq.length - 1];
+  if (targetName !== root) {
+    printNode(targetName ?? "", "", true);
+  }
+}
