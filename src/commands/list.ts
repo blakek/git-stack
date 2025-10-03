@@ -1,11 +1,15 @@
 import {
+  buildStackIndex,
+  collectBranchAndDescendants,
   defineArgs,
+  findRootForBranch,
   getCurrentBranch,
   getFullStackLookup,
   isInGitRepo,
+  printForest,
+  printPruned,
   type Command,
 } from "@/lib";
-import * as Tree from "@/lib/tree";
 
 const args = defineArgs([
   {
@@ -42,10 +46,10 @@ export const listCommand: Command<typeof args> = {
     const branch = args.branch || (await getCurrentBranch());
 
     const stackLookup = await getFullStackLookup();
-    const { nodes, roots, errors } = Tree.buildStackGraph(stackLookup);
+    const { parents, children, roots } = buildStackIndex(stackLookup);
 
     if (args.all) {
-      Tree.printStacks(roots, nodes, branch);
+      printForest(roots, children, branch);
       return;
     }
 
@@ -55,19 +59,24 @@ export const listCommand: Command<typeof args> = {
       );
     }
 
-    const root = Tree.findRootOf(branch, nodes);
+    const root = findRootForBranch(branch, parents);
     if (!root) {
       throw new Error(`Branch "${branch}" is not part of a stack.`);
     }
 
-    Tree.printPrunedStack(root, branch, nodes);
+    const descendants = collectBranchAndDescendants(root, children);
 
-    if (errors.length > 0) {
-      console.warn("Warnings:");
-      for (const error of errors) {
-        console.warn(`  - ${error}`);
-      }
-      console.warn("");
+    const allow = new Set<string>([...descendants]);
+    // Walk up to root, adding ancestors
+    let cursor: string | undefined = root;
+    while (cursor && cursor !== root) {
+      const parent = parents.get(cursor);
+      if (!parent) break;
+      allow.add(parent);
+      cursor = parent;
     }
+    allow.add(root);
+
+    printPruned(root, allow, children, branch);
   },
 };

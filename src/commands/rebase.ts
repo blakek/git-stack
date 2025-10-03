@@ -41,6 +41,6 @@ export const rebaseCommand: Command<typeof args> = {
     }
 
     await maybeFetchOrigin();
-    await $`git -c rerere.enabled=true -c rerere.autoUpdate=true rebase --autostash --update-refs ${parent}`;
+    await $`git -c rerere.enabled=true -c rerere.autoupdate=true rebase --autostash --update-refs ${parent}`;
   },
 };
