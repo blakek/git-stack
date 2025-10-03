@@ -1,4 +1,5 @@
 import { branchExists, defineArgs, isInGitRepo, type Command } from "@/lib";
+import { $ } from "bun";
 
 const args = defineArgs([
   {
@@ -48,6 +49,6 @@ export const addCommand: Command<typeof args> = {
       return;
     }
 
-    throw new Error("Not implemented yet");
+    await $`git switch -c ${name}`;
   },
 };
