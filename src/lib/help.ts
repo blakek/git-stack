@@ -1,6 +1,6 @@
 import { commandMap, commands } from "@/commands";
 import { cliName, gitCliName } from "@/constants";
-import type { Argument, Command } from "@/types";
+import type { Argument, Command } from "@/lib";
 import { render } from "@blakek/scratchpad";
 import { bold, dim, italic, reset } from "./terminal";
 

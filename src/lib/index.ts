@@ -1,3 +1,4 @@
+export * from "./arguments";
+export * from "./git";
 export * from "./help";
-export * from "./parse-arguments";
 export * from "./terminal";

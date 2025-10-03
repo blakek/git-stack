@@ -1,5 +1,5 @@
 import { cliName, version } from "@/constants";
-import type { Command } from "@/types";
+import type { Command } from "@/lib";
 
 export const versionCommand: Command = {
   args: [],

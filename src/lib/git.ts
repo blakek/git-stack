@@ -17,3 +17,12 @@ export async function getCurrentBranch(): Promise<string | undefined> {
     return undefined;
   }
 }
+
+export async function branchExists(branchName: string): Promise<boolean> {
+  try {
+    await $`git show-ref --verify --quiet refs/heads/${branchName}`.quiet();
+    return true;
+  } catch {
+    return false;
+  }
+}
