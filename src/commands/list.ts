@@ -1,4 +1,4 @@
-import { defineArgs, isInGitRepo, type Command } from "@/lib";
+import { defineArgs, getCurrentBranch, isInGitRepo, type Command } from "@/lib";
 
 const args = defineArgs([
   {
@@ -26,6 +26,24 @@ export const listCommand: Command<typeof args> = {
       throw new Error("Not in a git repository");
     }
 
-    console.log("TODO: List branches in the current stack.");
+    if (args.all && args.branch) {
+      throw new Error(
+        "Cannot use --all and specify a branch at the same time."
+      );
+    }
+
+    if (args.all) {
+      throw new Error("Listing all stacks is not yet implemented.");
+    }
+
+    const branch = args.branch || (await getCurrentBranch());
+
+    if (!branch) {
+      throw new Error(
+        "Could not determine current branch. Please specify one."
+      );
+    }
+
+    throw new Error("Listing a specific stack is not yet implemented.");
   },
 };
