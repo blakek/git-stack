@@ -8,12 +8,6 @@ import {
 } from "@/lib/stack";
 import { describe, expect, it } from "bun:test";
 
-function mapOf(pairs: Array<[string, string]>): Map<string, string> {
-  const m = new Map<string, string>();
-  for (const [child, parent] of pairs) m.set(child, parent);
-  return m;
-}
-
 function captureConsole(fn: () => void): string[] {
   const lines: string[] = [];
   const original = console.log;
@@ -31,7 +25,7 @@ function captureConsole(fn: () => void): string[] {
 describe("stack index", () => {
   it("builds parents/children/roots", () => {
     // main -> feature-1 -> feature-2; main -> temp-test-1
-    const lookup = mapOf([
+    const lookup = new Map([
       ["feature-1", "main"],
       ["feature-2", "feature-1"],
       ["temp-test-1", "main"],
@@ -52,7 +46,7 @@ describe("stack index", () => {
   });
 
   it("finds root for a branch", () => {
-    const lookup = mapOf([
+    const lookup = new Map([
       ["a", "main"],
       ["b", "a"],
       ["c", "b"],
@@ -65,7 +59,7 @@ describe("stack index", () => {
   });
 
   it("collects descendants", () => {
-    const lookup = mapOf([
+    const lookup = new Map([
       ["f1", "main"],
       ["f2", "f1"],
       ["f3", "f2"],
@@ -82,7 +76,7 @@ describe("stack index", () => {
 
 describe("printing", () => {
   it("prints full forest (all)", () => {
-    const lookup = mapOf([
+    const lookup = new Map([
       ["feature-1", "main"],
       ["feature-2", "feature-1"],
       ["temp-test-1", "main"],
@@ -101,7 +95,7 @@ describe("printing", () => {
   });
 
   it("prints pruned stack (path + descendants)", () => {
-    const lookup = mapOf([
+    const lookup = new Map([
       ["feature-1", "main"],
       ["feature-2", "feature-1"],
       ["feature-2-2", "feature-2"],
@@ -136,7 +130,7 @@ describe("printing", () => {
   });
 
   it("pruned output excludes siblings not on path or descendants", () => {
-    const lookup = mapOf([
+    const lookup = new Map([
       ["feature-1", "main"],
       ["feature-2", "feature-1"],
       ["temp-test-1", "main"],
@@ -157,7 +151,7 @@ describe("printing", () => {
   });
 
   it("pruned output does not duplicate descendant subtrees", () => {
-    const lookup = mapOf([
+    const lookup = new Map([
       ["feature-1", "main"],
       ["feature-2", "feature-1"],
       ["feature-2-2", "feature-2"],
