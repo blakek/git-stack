@@ -11,5 +11,8 @@
   },
   "dependencies": {
     "@blakek/scratchpad": "link:@blakek/scratchpad"
+  },
+  "scripts": {
+    "typecheck": "bun --bun tsc --noEmit"
   }
 }
