@@ -70,10 +70,10 @@ export interface Command<Args extends readonly Argument[] = []> {
 /** Helper to define command arguments with proper typing. */
 export const defineArgs = <const A extends readonly Argument[]>(a: A) => a;
 
-export function parseArguments(
+export function parseArguments<T extends readonly Argument[]>(
   inputArgs: string[],
-  commandArgs: Argument[]
-): RunArgs<typeof commandArgs> {
+  commandArgs: T
+): RunArgs<T> {
   const { flags = [], positionals = [] } = Object.groupBy(commandArgs, (arg) =>
     arg.isPositional ? "positionals" : "flags"
   );
@@ -138,5 +138,5 @@ export function parseArguments(
     }
   });
 
-  return parsed as RunArgs<typeof commandArgs>;
+  return parsed as RunArgs<T>;
 }
