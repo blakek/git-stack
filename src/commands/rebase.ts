@@ -1,46 +1,80 @@
 import {
   defineArgs,
   getCurrentBranch,
-  guessMainBranch,
+  getFullStackLookup,
+  buildStackIndex,
   maybeFetchOrigin,
+  planRebase,
+  executePlan,
   type Command,
+  PlanError,
 } from "@/lib";
-import { $ } from "bun";
+
+// We intentionally do not import guessMainBranch directly so planner can inject it.
 
 const args = defineArgs([
   {
-    description: "Parent branch to rebase onto (guesses if not provided)",
-    isPositional: true,
-    name: "parent",
-    required: false,
+    alias: "n",
+    description: "Print the rebase plan without executing",
+    name: "dry-run",
+    type: "boolean",
+  },
+  {
+    description: "Explicit base ref to rebase onto (overrides guess)",
+    name: "onto",
     type: "string",
   },
   {
-    alias: "n",
-    description: "Print what would be done without making any changes",
-    isPositional: false,
-    name: "dry-run",
-    required: false,
+    description: "Ancestor at which to start (trim earlier ancestors)",
+    name: "from",
+    type: "string",
+  },
+  {
+    description: "Only rebase the ancestor path (no descendants)",
+    name: "current-only",
     type: "boolean",
   },
 ]);
 
 export const rebaseCommand: Command<typeof args> = {
   args,
-  description: "Rebase all stack branches onto the latest parent branch",
+  description:
+    "Rebase the current stack: ancestors (root→current) then descendants (unless --current-only)",
   name: "rebase",
-  run: async (args) => {
-    const parent = args.parent || (await guessMainBranch());
-    const currentBranch = await getCurrentBranch();
-
-    if (args["dry-run"]) {
-      console.log(
-        `Would rebase ${currentBranch} and any child branches onto ${parent}.`
-      );
-      return;
+  run: async (argv) => {
+    const current = await getCurrentBranch();
+    if (!current) {
+      throw new Error("Could not determine current branch (detached HEAD?)");
     }
 
-    await maybeFetchOrigin();
-    await $`git -c rerere.enabled=true -c rerere.autoupdate=true rebase --autostash --update-refs ${parent}`;
+    const stackLookup = await getFullStackLookup();
+    const { parents, children } = buildStackIndex(stackLookup);
+
+    try {
+      const plan = await planRebase({
+        current,
+        parents,
+        children,
+        flags: {
+          onto: argv.onto || undefined,
+          from: argv.from || undefined,
+          currentOnly: !!argv["current-only"],
+        },
+        guessBase: async () => argv.onto || "" || (await (await import("@/lib")).guessMainBranch()),
+      });
+
+      const dryRun = !!argv["dry-run"]; // print plan only
+      await executePlan({
+        plan,
+        dryRun,
+        fetch: maybeFetchOrigin,
+        getCurrentBranch: () => getCurrentBranch(),
+      });
+    } catch (e) {
+      if (e instanceof PlanError) {
+        throw e; // propagate with message
+      }
+      throw e;
+    }
   },
 };
