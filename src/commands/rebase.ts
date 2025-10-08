@@ -1,13 +1,13 @@
 import {
+  buildStackIndex,
   defineArgs,
+  executePlan,
   getCurrentBranch,
   getFullStackLookup,
-  buildStackIndex,
   maybeFetchOrigin,
-  planRebase,
-  executePlan,
-  type Command,
   PlanError,
+  planRebase,
+  type Command,
 } from "@/lib";
 
 // We intentionally do not import guessMainBranch directly so planner can inject it.
@@ -60,7 +60,8 @@ export const rebaseCommand: Command<typeof args> = {
           from: argv.from || undefined,
           currentOnly: !!argv["current-only"],
         },
-        guessBase: async () => argv.onto || "" || (await (await import("@/lib")).guessMainBranch()),
+        guessBase: async () =>
+          argv.onto || "" || (await (await import("@/lib")).guessMainBranch()),
       });
 
       const dryRun = !!argv["dry-run"]; // print plan only

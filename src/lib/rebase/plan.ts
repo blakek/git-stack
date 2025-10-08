@@ -1,4 +1,4 @@
-import type { ParentsMap, ChildrenMap } from "@/lib/stack";
+import type { ChildrenMap, ParentsMap } from "@/lib/stack";
 import { findRootForBranch } from "@/lib/stack";
 
 export interface PlanFlags {
@@ -51,7 +51,9 @@ export async function planRebase(options: {
       cursor = p;
     }
     if (!chain.includes(flags.from)) {
-      throw new PlanError(`--from ${flags.from} is not an ancestor of ${current}`);
+      throw new PlanError(
+        `--from ${flags.from} is not an ancestor of ${current}`
+      );
     }
   }
 
@@ -77,7 +79,9 @@ export async function planRebase(options: {
   // If --from provided, trim everything before it
   const fromIndex = flags.from ? ancestorPath.indexOf(flags.from) : 0;
   if (flags.from && fromIndex === -1) {
-    throw new PlanError(`--from ${flags.from} not found in ancestor chain for ${current}`);
+    throw new PlanError(
+      `--from ${flags.from} not found in ancestor chain for ${current}`
+    );
   }
   const trimmedAncestors = ancestorPath.slice(fromIndex);
 

@@ -1,6 +1,6 @@
+import { bold, reset } from "@/lib/terminal";
 import { $ } from "bun";
 import type { RebasePlan, RebaseStep } from "./plan";
-import { bold, reset } from "@/lib/terminal";
 
 export interface ExecuteOptions {
   plan: RebasePlan;
@@ -24,14 +24,25 @@ async function isRebaseInProgress(): Promise<boolean> {
   }
 }
 
-async function attemptRebase(step: RebaseStep, log: ExecuteOptions["log"]): Promise<number> {
+async function attemptRebase(
+  step: RebaseStep,
+  log: ExecuteOptions["log"]
+): Promise<number> {
   log?.(`Rebasing ${step.branch} onto ${step.onto}`);
-  const result = await $`git -c rerere.enabled=true -c rerere.autoupdate=true rebase --autostash --update-refs ${step.onto}`.nothrow();
+  const result =
+    await $`git -c rerere.enabled=true -c rerere.autoupdate=true rebase --autostash --update-refs ${step.onto}`.nothrow();
   return result.exitCode;
 }
 
 export async function executePlan(opts: ExecuteOptions): Promise<void> {
-  const { plan, dryRun, fetch, log = console.log, checkout = defaultCheckout, getCurrentBranch } = opts;
+  const {
+    plan,
+    dryRun,
+    fetch,
+    log = console.log,
+    checkout = defaultCheckout,
+    getCurrentBranch,
+  } = opts;
 
   log(`${bold}Base:${reset} ${plan.baseRef}`);
   log(`${bold}Plan:${reset}`);
@@ -44,13 +55,19 @@ export async function executePlan(opts: ExecuteOptions): Promise<void> {
   if (fetch) await fetch();
 
   if (await isRebaseInProgress()) {
-    log(`Active git rebase detected. Complete it (git rebase --continue/--abort) before running git stack rebase.`);
+    log(
+      `Active git rebase detected. Complete it (git rebase --continue/--abort) before running git stack rebase.`
+    );
     return;
   }
 
   for (let i = 0; i < plan.steps.length; i++) {
     const step = plan.steps[i]!;
-    log(`\n[${i + 1}/${plan.steps.length}] ${bold}${step.branch}${reset} -> ${step.onto}`);
+    log(
+      `\n[${i + 1}/${plan.steps.length}] ${bold}${step.branch}${reset} -> ${
+        step.onto
+      }`
+    );
     const current = getCurrentBranch ? await getCurrentBranch() : undefined;
     if (current !== step.branch) {
       await checkout(step.branch);
@@ -59,11 +76,15 @@ export async function executePlan(opts: ExecuteOptions): Promise<void> {
     const exitCode = await attemptRebase(step, log);
     if (exitCode !== 0) {
       if (await isRebaseInProgress()) {
-        log(`Conflict while rebasing ${step.branch} onto ${step.onto}. Resolve conflicts then run: git rebase --continue`);
+        log(
+          `Conflict while rebasing ${step.branch} onto ${step.onto}. Resolve conflicts then run: git rebase --continue`
+        );
         log(`After that, rerun: git stack rebase`);
         return;
       }
-      throw new Error(`Rebase failed for ${step.branch} (exit code ${exitCode}).`);
+      throw new Error(
+        `Rebase failed for ${step.branch} (exit code ${exitCode}).`
+      );
     } else {
       log(`Completed ${step.branch}`);
     }

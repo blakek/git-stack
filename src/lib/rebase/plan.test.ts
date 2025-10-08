@@ -1,6 +1,6 @@
-import { describe, it, expect } from "bun:test";
 import { buildStackIndex } from "@/lib/stack";
-import { planRebase, PlanError } from "./plan";
+import { describe, expect, it } from "bun:test";
+import { PlanError, planRebase } from "./plan";
 
 async function runPlan(opts: Parameters<typeof planRebase>[0]) {
   return planRebase(opts);
